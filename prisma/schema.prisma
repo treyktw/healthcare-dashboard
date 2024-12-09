@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  doctor    Doctor?
+  patient   Patient?
+}
+
+model Patient {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  birthDate     DateTime
+  gender        String
+  address       String
+  occupation    String
+
+  emergencyContactName  String
+  emergencyContactPhone String
+
+  allergies            String    @default("")
+  currentMedications   String    @default("")
+  familyHistory        String    @default("")
+  medicalHistory       String    @default("")
+
+  insuranceProvider    String
+  insurancePolicyNumber String
+  fileUrl             String?
+
+  treatmentConsent     Boolean
+  disclosureConsent    Boolean
+  privacyConsent       Boolean
+
+  user               User     @relation(fields: [userId], references: [id])
+  primaryPhysician   Doctor   @relation("PrimaryDentist", fields: [primaryPhysicianId], references: [id])
+  primaryPhysicianId String
+  appointments       Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([primaryPhysicianId])
+  Treatment Treatment[]
+  Doctor Doctor[] @relation("PatientPrimaryPhysician")
+}
+
+model Doctor {
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  specialization String[]
+  licenseNumber  String         @unique
+  licenseExpiry  DateTime
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  imageUrl       String
+  appointments   Appointment[]
+  availability   Availability[]
+  user           User           @relation(fields: [userId], references: [id])
+  education      Education[]
+  patients       Patient[]      @relation("PatientPrimaryPhysician")
+  treatments     Treatment[]
+
+  Patient Patient[] @relation("PrimaryDentist")
+}
+
+model Appointment {
+  id                 String     @id @default(uuid())
+  patientId          String
+  doctorId           String
+  date               DateTime
+  startTime          DateTime
+  endTime            DateTime
+  status             Status
+  type               String
+  reason             String?
+  notes              String?
+  cancellationReason String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  doctor             Doctor     @relation(fields: [doctorId], references: [id])
+  patient            Patient    @relation(fields: [patientId], references: [id])
+  treatment          Treatment?
+}
+
+model Treatment {
+  id            String      @id @default(uuid())
+  patientId     String
+  doctorId      String
+  appointmentId String      @unique
+  type          String
+  description   String
+  status        String
+  startDate     DateTime
+  endDate       DateTime?
+  cost          Float
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  payments      Payment[]
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+  patient       Patient     @relation(fields: [patientId], references: [id])
+}
+
+model Payment {
+  id          String    @id @default(uuid())
+  treatmentId String
+  amount      Float
+  status      String
+  method      String
+  date        DateTime
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  treatment   Treatment @relation(fields: [treatmentId], references: [id])
+}
+
+model Availability {
+  id          String   @id @default(uuid())
+  doctorId    String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+
+  @@unique([doctorId, dayOfWeek])
+}
+
+model Education {
+  id          String   @id @default(uuid())
+  doctorId    String
+  degree      String
+  institution String
+  year        Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  type      String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  type      String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum Status {
+  pending
+  cancelled
+  scheduled
+}
