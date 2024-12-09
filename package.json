@@ -34,7 +34,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "framer-motion": "^11.13.1",
+    "framer-motion": "^11.13.3",
     "fs": "^0.0.1-security",
     "healthcare-dashboard": "file:",
     "input-otp": "^1.4.1",
